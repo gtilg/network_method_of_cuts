@@ -15,7 +15,6 @@ q(id_bw_start:end)=[];
 
 % Transform with kappa_net.
 w_net = FD.qmax/(kappa_net - FD.kc);
-% w_net = FD.w;
 k_prime = k/kappa_net/1000 - 1/2 * (1 - (1/w_net - 1/FD.u)*q/FD.qmax/3600);
 q_new = q(k_prime<=0);
 k_prime(k_prime>0)=[];

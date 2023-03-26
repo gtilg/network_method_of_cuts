@@ -9,33 +9,36 @@ FD.kc = FD.kappa * FD.w / (FD.w + FD.u); % critical density [veh/m]
 FD.qmax = FD.kc * FD.u; % Capacity [veh/s]
 
 % Load Network topology and control settings
-tr_scenario = 1;
 load('network_1.mat');
 
 %% ----- (2) Create hypernetwork -----
 % nVT approach
-[network_nvt, ~] = nvt(network_sf_alt, FD, 0, tr_scenario);
-[network_nvt, kappa_net] = nvt(network_nvt, FD, 1, tr_scenario);
+[network_nvt, ~] = nvt(network_sf_alt, FD, 0);
+[network_nvt, kappa_net] = nvt(network_nvt, FD, 1);
 
-% Approximate approach
-approxLevel = 1;
-[network_approx1] = create_hypernetwork_approx(network_sf_alt, FD, approxLevel, tr_scenario);
+% Approximate approach LS
+method = "LS";
+[network_approx1] = create_hypernetwork_approx(network_sf_alt, FD, method);
 [kappa_net_app1, network_approx1] = findKappanet(network_approx1, FD);
 
-approxLevel = 2;
-[network_approx2] = create_hypernetwork_approx(network_sf_alt, FD, approxLevel, tr_scenario);
+% Approximate approach FS
+method = "FS";
+[network_approx2] = create_hypernetwork_approx(network_sf_alt, FD, method);
 [kappa_net_app2, network_approx2] = findKappanet(network_approx2, FD);
 
 %% ----- (3) Estimate the nMC MFD -----
 % Estimate FF-branch, Estimate capacity branch, Estimate BW-branch
+% with nVT
 [tmp_mfd_nvt] = estimateFreeflowBranch(network_nvt, FD);
 [tmp_mfd_nvt] = estimateCapacityBranch(tmp_mfd_nvt, network_nvt);
 [mfd_net_nvt] = estimateCongestedBranch(tmp_mfd_nvt, kappa_net, FD);
 
+% with LS approach
 [tmp_mfd_approx1] = estimateFreeflowBranch(network_approx1, FD);
 [tmp_mfd_approx1] = estimateCapacityBranch(tmp_mfd_approx1, network_approx1);
 [mfd_net_approx1] = estimateCongestedBranch(tmp_mfd_approx1, kappa_net_app1, FD);
 
+% with FS approach
 [tmp_mfd_approx2] = estimateFreeflowBranch(network_approx2, FD);
 [tmp_mfd_approx2] = estimateCapacityBranch(tmp_mfd_approx2, network_approx2);
 [mfd_net_approx2] = estimateCongestedBranch(tmp_mfd_approx2, kappa_net_app2, FD);

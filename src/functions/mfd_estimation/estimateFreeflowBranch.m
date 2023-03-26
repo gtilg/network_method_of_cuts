@@ -1,8 +1,10 @@
 function [mfd] = estimateFreeflowBranch(network, FD)
 %ESTIMATEFREEFLOWBRANCH Estimates the free flow branch of the MFD
-% The code is based on Ludovic Leclercq's VT code and modified to be applicable to
-% networks.
-% Author: Gabriel Tilg, gabriel.tilg@tum.de
+% This code is partly based on the code corresponding to the paper 
+% Leclercq, L., & Geroliminis, N. (2013). Estimating MFDs in simple 
+% networks with route choice. 
+% Transportation Research Part B: Methodological, 57, 468-484. Please cite
+% this paper if you use any of the codes below.
 
 hyperlinks = network.links;
 
@@ -35,7 +37,6 @@ for iCorr = 1:nCorrs
     [~, ~, ~, ~, MacroFundDiag, ~] = MFD(CalculationMethod, FD, Link, HyperlinkProperties);
     [q,k] = deriveFreeflowBranchFromCuts(MacroFundDiag, FD);
     qall(iCorr,:)=q;
-%     disp(iCorr);
 end
 
 %% ===== Aggregate the corridor cuts to network ones =====

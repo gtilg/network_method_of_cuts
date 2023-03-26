@@ -1,6 +1,13 @@
 function [ CalculationMethod, FD, HyperlinkProperties, Link ] = hyperlink_generation( CalculationMethod, FD, HyperlinkProperties, links, iCorr )
 %HYPERLINK_GENERATION automatically completes the inputs defined by the
-%user, and define the links of the hyperlink
+%user, and define the links of the hyperlink.
+
+% This code is partly based on the code corresponding to the paper 
+% Leclercq, L., & Geroliminis, N. (2013). Estimating MFDs in simple 
+% networks with route choice. 
+% Transportation Research Part B: Methodological, 57, 468-484. Please cite
+% this paper if you use any of the codes below.
+
 [Link, HyperlinkProperties] = complete_Link_parameters( HyperlinkProperties, links, iCorr); % define the link properties
 % ----- Link structure -----
 % Link.ID : Link ID
@@ -23,15 +30,6 @@ HyperlinkProperties.TotalLength = sum([Link.Length]) + LastLink.Length; % we add
 HyperlinkProperties.G_Cycle = mean([Link(:).SignalC]); % we add this information
 HyperlinkProperties.G_Ratio = mean([Link(:).SignalGT])/mean([Link(:).SignalC]); % we add this information
 HyperlinkProperties.G_Offset = mean([Link(:).SignalDelay]); % we add this information
-% ----- Hyperlink structure -----
-% HyperlinkProperties.NumLink : number of link with signal at their end
-% HyperlinkProperties.NumLane : number of lane on each link
-% HyperlinkProperties.Length : average length of links [m]
-% HyperlinkProperties.G_Cycle : common cycle for each signal [s]
-% HyperlinkProperties.G_Ratio : average ratio green time / cycle for each signal
-% HyperlinkProperties.G_Offset : offset for regular hyperlink [s]
-% HyperlinkProperties.TypeChoice : 'Gambetta', 'OneCycleRand', 'Regular', or 'Specific'
-% HyperlinkProperties.TotalLength : total length of the hyperlink [m]
 
 CalculationMethod = adjust_time_window (CalculationMethod, FD, HyperlinkProperties);
 % ----- CalculationMethod structure -----

@@ -18,7 +18,7 @@ for i = 1:height(tmp)
     sb_times(i).down = NaN;
 end
 
-% with offsets, the first wave starts later (at the beginning of the red phase)
+% In case of offsets the first wave starts later (at the beginning of the red phase)
 j = 1; % iterator
 error = 1;
 maxiter = 100;
@@ -29,7 +29,7 @@ while (error >= 10^-5 || isnan(error)) && j <= maxiter
     sb_times = sb_times_new; % update the data
 end
 
-% 2. Step: derive the according number of vehicles in the links. Assume a
+% 2. Step: derive the number of vehicles in the links. Assume a
 % linear decrease with the time available to fill the link.
 for i = 1:height(tmp)
     if tmp.origin(i) ~=1
@@ -97,9 +97,6 @@ for i = 1:height(tmp)
         sb_times(i).demand_down = NaN;
         sb_times(i).demand_up = NaN;
     else
-        if i == 92
-            1;
-        end
         % linear interpoalte remaining vehicles into green phase
         time_rem_rel = mod(sb_times(i+1).supply_down + tmp.length(i)/FD.u, network.links.cycle(i));
         time_rem_rel_red = min(time_rem_rel,sb_times(i+1).supply_down - sb_times(i+1).signal_down);

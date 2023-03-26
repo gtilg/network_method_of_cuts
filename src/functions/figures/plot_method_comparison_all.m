@@ -1,35 +1,35 @@
 function plot_method_comparison_all(mfd_net_nvt, mfd_net_approx1, mfd_net_approx2)
-%PLOT_FIGURES Summary of this function goes here
-%   Detailed explanation goes here
+%PLOT_FIGURES Plots the MFDs from all evaluated methods
+%   This refers to the CTM ground truth data, the original method of cuts
+%   by Daganzo & Geroliminis (DG), by Leclercq and Geroliminis (LG), and by
+%   Aghamohammadi and Laval (AL).
 
 set(groot,'defaultAxesTickLabelInterpreter','latex');
 set(groot,'defaulttextinterpreter','latex');
 set(groot,'defaultLegendInterpreter','latex');
 
+%% Load data
 % CTM: Sioux Falls
 load('ctm_results_7200_1.mat')
-% load('ctm_results_3600.mat')
 k_groundtruth_ctm = mfd_k;
 q_groundtruth_ctm = mfd_q;
 
-% Orig Daganzo
+% Original DG data
 load('origMC_DG.mat')
 k_daganzo = k;
 q_daganzo = q;
 
-% Orig Leclercq
+% Original LG data
 load('origMC_LG.mat')
 k_lec = mfd_lec.k;
 q_lec = mfd_lec.q;
 
-% Orig Laval
+% Original AL data
 load('origMC_AL.mat')
 k_lav = mfd_lav.k;
 q_lav = mfd_lav.q;
 
-% Plot nMC/MC MFDs
-% scatter(k_groundtruth,q_groundtruth)
-% hold on
+%% Plot nMC/MC MFDs
 figure;
 scatter(k_groundtruth_ctm,q_groundtruth_ctm,'d')
 hold on
@@ -60,14 +60,11 @@ set(gcf,'Position', [10 10 800 800])
 set(findall(gca, 'Type', 'Line'),'LineWidth',2);
 set(findall(gca, 'Type', 'Scatter'),'SizeData', 30,'MarkerFaceColor',[0.7 0.7 0.7],'MarkerEdgeColor',[0.7 0.7 0.7]);
 
-% text width for TRB papers:
 width = 6.5; % inches
-%number of subplot rows:
 nrow = 1;
 height = 6.5; % inches
-% your plot
 set(gcf,'PaperUnits','inches')
 set(gcf,'PaperSize',[width height],'PaperPosition',[0 0 width height])
-print('-dpdf','figures/bidir_comp_all.pdf')
+print('-dpdf','figures/result.pdf')
 end
 

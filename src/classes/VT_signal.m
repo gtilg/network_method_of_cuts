@@ -1,5 +1,5 @@
 classdef VT_signal
-    %SIGNAL Summary of this class goes here
+    %SIGNAL Creates a VT-signal object
     %   Assumption 1: Cycle always starts with a red time.
     
     properties
@@ -15,7 +15,7 @@ classdef VT_signal
     
     methods
         function obj = VT_signal(cycleTime,redTime,offset,position,simulationHorizon)
-            %SIGNAL Construct an instance of a signal
+            %SIGNAL Construct an instance of a signal in the VT network
             if obj.redTime > obj.cycleTime
                 error('Red time > cycle Time');
             elseif obj.redTime == obj.cycleTime
@@ -28,7 +28,7 @@ classdef VT_signal
             obj.greenTime = cycleTime - redTime;
             obj.listCycleTime = offset:cycleTime:simulationHorizon;
             
-            % Consider of sets in the list of red and green times
+            % Consideration of sets in the list of red and green times
             if offset > obj.greenTime
                 obj.listRedTime = [redTime - (cycleTime - offset) obj.listCycleTime + redTime];
             else

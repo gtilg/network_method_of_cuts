@@ -1,20 +1,21 @@
-function [network, kappa_net] = nvt(network, FD, jamScenario, trscenario)
-%NVT Summary of this function goes here
-%   Detailed explanation goes here
+function [network, kappa_net] = nvt(network, FD, jamScenario)
+%NVT This method is based on the "network variational theory" as described
+% in Tilg et al. (2021). It solves a KWT problem at the network level based
+% on variational theory principles. Please cite the according paper if you
+% use this method.
 
-% demandFactor = trscenario;
-% x_nvt = [0.7456, 0.7707, 0.6329, 0.6560, 0.6594, 0.8201, 0.8813, 0.9470, 0.7871, 1];
-% demandFactor = x_nvt(trscenario+1);
-% demandFactor = 0.8;
+% This demandFactor was found by an optimization for the specifc set of
+% truning ratios
 demandFactor = 0.7707;
-% demandFactor = 0.8;
 
 % Define the numerical grid for a hyperlink
-numGrid.dt = 0.1; % [s] Time-step. Spatial step is defined by dx=v_f*dt
+numGrid.dt = 1; % [s] Time-step. Spatial step is defined by dx=v_f*dt
 numGrid.T = 7200; % [s] Simulation horizon:  Needs to be an integer of v_f
-numGrid.numT = length(0:numGrid.dt:numGrid.T);
-numGrid.dx = FD.u*numGrid.dt;
-numGrid.precision = 10^-6;
+numGrid.numT = length(0:numGrid.dt:numGrid.T); % [-] length of the numerical 
+% grid in the temporal dimension
+numGrid.dx = FD.u*numGrid.dt; % [-] length of the numerical grid in the 
+% spatial dimension
+numGrid.precision = 10^-6; % Computational precision
 
 links = network.links;
 
@@ -26,6 +27,7 @@ corrLengths = splitapply(func, links.length, group);
 
 hyperlink = struct();
 
+% Define the main struct on which all calculations are based on
 for i = 1:nCorrs
     hyperlink(i).corridorLength = corrLengths(i);
     hyperlink(i).numT = numGrid.numT;
@@ -38,12 +40,12 @@ for i = 1:nCorrs
     hyperlink(i).FD = FD;
 end
 
-% define nodes by connecting corridors, turning ratios, und pos on both
-% corrs, offset, cycle length and red time
+% Define nodes by connecting corridors, turning ratios, und posistions on 
+% both corridorss, offsets, cycle lengths and red times
 nNodes = max(network.connections.intersection);
 idxNode = 1;
-cycleTime = 90;
-redTime = 45;
+cycleTime = 90; % Assumption for cycle length in case study
+redTime = 45; % Assumption for red time in case study
 
 connections = network.connections;
 
@@ -63,8 +65,8 @@ for i = 1:22
         nodes(idxNode).positions(j) = links.cumLength(links.id==fromLinks(j));
     end
     nodes(idxNode).offsets = [0 45 0 45];
-    nodes(idxNode).cycleTime = 90;
-    nodes(idxNode).redTime = 45;
+    nodes(idxNode).cycleTime = cycleTime;
+    nodes(idxNode).redTime = redTime;
     nodes(idxNode).simTime = numGrid.T;
     nodes(idxNode).signal1 = VT_signal(cycleTime, redTime, nodes(idxNode).offsets(1), nodes(idxNode).positions(1), numGrid.T);
     nodes(idxNode).signal2 = VT_signal(cycleTime, redTime, nodes(idxNode).offsets(2), nodes(idxNode).positions(2), numGrid.T);
@@ -81,8 +83,8 @@ for i=1:nNodes
 end
 
 %% Definition of demand
-% Definition of the initial density.
-
+% If we want to find the network jam density, we send full demand to fully
+% load the network
 if jamScenario == 1
     demandFactor = 1;
 end
@@ -93,6 +95,9 @@ for iCorr=1:nCorrs
 end
 
 %% Set the last BN to zero if there is a jam scenario
+% If we want to find the network jam density, we create a bottleneck (BN)
+% which capacity is set to zero veh/s at the end of each corridor, i.e.
+% destination link.
 if jamScenario == 1
     for iCorr=1:nCorrs
         hyperlink(iCorr).BN(end-1,numGrid.T*0.75/numGrid.dt:end) = 0;
@@ -100,10 +105,10 @@ if jamScenario == 1
 end
 
 %% Solve the given KWT problem
-% Calculate N-Values for a hyperlink
+% Calculate N-Values for a hyperlink by applying Variational theory
 [hyperlink] = solveVTnet(hyperlink, nodes, numGrid, FD);
 
-% Calculate density and flows based on hyperlink
+% Calculate densities and flows based on hyperlink
 for iCorr=1:nCorrs
     hyperlink(iCorr) = calcDensFlow(numGrid, hyperlink(iCorr));
 end
@@ -139,10 +144,13 @@ if jamScenario == 0
         network.links.sb_i(network.links.corridor == iCorr) = ...
             sum(sb_checker(:,end-90/numGrid.dt:end-1),2);
 
+        % find maximum flows
         qTilde = (max(N_tmp(:,end-90/numGrid.dt:end-1),[],2)-min(N_tmp(:,end-90/numGrid.dt:end-1),[],2));
         network.links.maxflow_i(network.links.corridor == iCorr) = qTilde / FD.qmax ./ ...
             network.links.green(network.links.corridor == iCorr); % normalize it with FD and divide by green time
     end
+
+    % Store results in struct
     for j = 1:height(network.links)
         if network.links.destination(j) == 1
             network.links.maxflow_j(j) = network.links.maxflow_i(j);
@@ -155,9 +163,11 @@ if jamScenario == 0
         end
     end
 else
+    % Find mean density per corridor for the gridlock case
     for iCorr=1:nCorrs
         k_corr(iCorr) = mean(hyperlink(iCorr).k(2:end-1,numGrid.T/numGrid.dt));
     end
+    % Find kappa_net
     kappa_net = sum((k_corr .* [hyperlink.corridorLength]))/sum([hyperlink.corridorLength]);
 
 end
@@ -186,7 +196,7 @@ end
 end
 
 function hyperlink = putSignalsToBNs(numGrid, hyperlink, signal)
-%PUTSIGNALSTOBNS Save red lights to bottleneck matrix
+%PUTSIGNALSTOBNS Store red lights to bottleneck matrix
 signalsPosStep = signal.position./numGrid.dx+1;
 tmpPhaseTimes = [0:numGrid.dt:numGrid.T]';
 capacity = hyperlink.FD.kc*hyperlink.FD.u;
@@ -239,7 +249,7 @@ q(q>hyperlink.FD.u*hyperlink.FD.kc)=hyperlink.FD.u*hyperlink.FD.kc;
 k(k<0)=0;
 k(k>hyperlink.FD.kappa)=hyperlink.FD.kappa;
 
-% The code below is computationally more efficient than "round"
+% Round
 hyperlink.q = floor(q / numGrid.precision)*numGrid.precision;
 hyperlink.k = round(k ,4); % this is needed for comparison
 end

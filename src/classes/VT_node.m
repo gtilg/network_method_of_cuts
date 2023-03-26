@@ -1,6 +1,5 @@
 classdef VT_node
-    %VT_NODE Summary of this class goes here
-    %   Detailed explanation goes here
+    %VT_NODE Creates a node in the VT-based network representation
     
     properties
         connection;
@@ -15,10 +14,10 @@ classdef VT_node
     
     methods
         function obj = VT_node(conn,tr, pos, os, cl, rp, simTime)
-            %VT_NODE Construct an instance of this class
-            %   It stores whch corridor are connected inthis node. ALso,
+            %VT_NODE
+            %   It stores which corridor are connected in this node. Also,
             %   the turning ratios are stored. Also, it makes sure the
-            %   offsets fit each other.
+            %   offsets are consistent.
             if (tr(2) == -1 && conn(2) ~= -1) || (tr(2) ~= -1 && conn(2) == -1)
                 error('Turning ratio not well defined.');
             elseif (pos(2) == -1 && conn(2) ~= -1) || (pos(2) ~= -1 && conn(2) == -1)

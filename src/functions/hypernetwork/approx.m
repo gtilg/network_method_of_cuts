@@ -1,6 +1,6 @@
-function [links] = approxFlows_wodown(x, links, nLinks, FD)
-%APPROXSPILLBACKS Summary of this function goes here
-%   Detailed explanation goes here
+function [links] = approx(x, links, nLinks, FD, method)
+% APPROX Solves the underlying problem according to the approximate 
+% approaches "full spillbacks" and "limited spillbacks" as described in the paper Tilg et al. (2023)
 
 % Step 1: iterate to find demand
 j = 1; % iterator
@@ -64,7 +64,7 @@ while (error >= 10^-5 || isnan(error)) && j <= maxiter
         spillbackData(idxLink).flow_i = max(0, FD.qmax / g * ( g - sigma_idx));
         spillbackData(idxLink).flow_j = max(0, FD.qmax / r * ( r - sigma_adjidx));
         
-        % Roughly account for FIFO diverge
+        % Account for FIFO diverge
         if links.destination(idxLink) == 0
             spillbackData(idxLink).flow = min([spillbackData(idxLink).flow_i,spillbackData(links.id==links.j_link(idxLink)).flow_j]);
         else
@@ -83,9 +83,10 @@ while (error >= 10^-5 || isnan(error)) && j <= maxiter
             boundaryCondition(idxLink).q_up_i = FD.qmax;
             boundaryCondition(idxLink).q_up_j = FD.qmax;
         else
-            % Do not update downstream propagation for this approximation
-            % level
-            % boundaryCondition(idxLink).q_downstream = spillbackData(links.id==links.downstream_i(idxLink)).flow;
+            % Only consider downstream flow adaptation in the FS method
+            if method == "FS"
+                boundaryCondition(idxLink).q_downstream = spillbackData(links.id==links.downstream_i(idxLink)).flow;
+            end
             boundaryCondition(idxLink).q_up_i = spillbackData(idxLink).flow;
             boundaryCondition(idxLink).q_up_j = spillbackData(links.id==links.j_link(idxLink)).flow;
         end
@@ -121,6 +122,7 @@ while (error >= 10^-5 || isnan(error)) && j <= maxiter
                 q_app_tmp(links.id==links.upstream_i(idxLink))*(1-links.alpha_ij(links.id==links.upstream_i(idxLink))) + ...
                 q_app_tmp(links.id==links.upstream_j(idxLink)) * links.alpha_ij(links.id==links.upstream_j(idxLink)));
         end
+        
     end
     error = sum((abs([q_app_tmp]-[links.maxflow_i]'))/abs([q_app_tmp]));
     j = j+1;
@@ -131,10 +133,6 @@ while (error >= 10^-5 || isnan(error)) && j <= maxiter
     end
 end
 
-qapp = [links.maxflow_i];
-
-output = mean(qapp)*(-1800);
-
 end
 
 function [dN] = calcDN(idxLink, links, g, r, boundaryCondition, FD)
@@ -144,14 +142,21 @@ in_red_phase = links.h(idxLink) == 0;
 if links.destination(idxLink) == 1
     dN = 0;
 else
+    % Define demand on link level
     N_demand = links.cumDemand(idxLink)*(1-links.alpha_ij(idxLink))*g ...
         + links.cumDemand(links.id==links.j_link(idxLink))*links.alpha_ji(idxLink)*r;
+    
+    % Define capacity on the link level
     if ~isnan(links.downstream_i(idxLink)) && links.destination(links.id == links.downstream_i(idxLink)) == 1
         N_capacity = (g + r) * FD.qmax;
     else
         N_capacity = g * boundaryCondition(idxLink).q_downstream;
     end
+    
+    % Find DN
     Delta_N = max([0, N_demand - N_capacity]);
+    
+    % Find dN
     if in_red_phase
         dN = Delta_N - links.tau(idxLink) * links.cumDemand(links.id==links.j_link(idxLink)) * links.alpha_ji(idxLink);
     elseif ~in_red_phase
@@ -166,7 +171,7 @@ in_red_phase = links.h(idxLink) == 0;
 
 if links.destination(idxLink) == 1
     sigma_idx = 0;
-    sigma_adjidx = 0; 
+    sigma_adjidx = 0;    
 else
     if in_red_phase
         denominator = links.cumDemand(idxLink) * (1-links.alpha_ij(idxLink))*(1+sign(dN)) + ...
@@ -176,10 +181,12 @@ else
     elseif ~in_red_phase
         denominator = links.cumDemand(idxLink) * (1-links.alpha_ij(idxLink))*(1-sign(dN)) + ...
             links.cumDemand(links.id==links.j_link(idxLink)) * links.alpha_ji(idxLink)*(1+sign(dN));
-        
         sigma_idx = max(0,min(links.tau(idxLink), links.tau(idxLink) + 2*dN / denominator));
         sigma_adjidx = max(0, 2*dN / denominator);
     end
+    
 end
+
+
 
 end

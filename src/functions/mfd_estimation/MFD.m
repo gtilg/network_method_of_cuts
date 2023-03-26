@@ -1,5 +1,11 @@
 function [ Link, Arc, Node, Cut, MacroFundDiag, ListLowerCuts ] = MFD( CalculationMethod, FD, Link, HyperlinkProperties)
 
+% This code is partly based on the code corresponding to the paper 
+% Leclercq, L., & Geroliminis, N. (2013). Estimating MFDs in simple 
+% networks with route choice. 
+% Transportation Research Part B: Methodological, 57, 468-484. Please cite
+% this paper if you use any of the codes below.
+
 % ===== Generation of the variational network =====
 % --- Generation of the structure Arcs ---
 Arc = arc_initialisation( Link, FD, CalculationMethod ); % at this time, Arc is the set of phases of all signals
@@ -14,7 +20,6 @@ for i=1:length(Arc)
     Arc(i).duration=[Arc(i).Paval(1) - Arc(i).Pamont(1)]; % Associated link ID for horizontal arcs
 end
 
-% [p, G] = plot_graph(Arc, Node);
 [G] = plot_graph(Arc, Node);
 
 % ===== MFD Computing =====
@@ -23,7 +28,6 @@ Cut = shortest_variational_paths( Link, Arc, Node, CalculationMethod, G );
 
 % --- Computing the tight cuts and so the MFD ---
 [MacroFundDiag, ListLowerCuts] = mfd_by_lower_cuts( Cut );
-% disp(['Computation of the MFD : ',num2str(toc),' sec']);tic;
 end
 
 
@@ -101,7 +105,6 @@ function [Node, Arc] = node_initialisation (Arc)
         % 1, the node is connected with a downstream green phase;
         % 2 the node is a intermediate node created by intersecting oblique arc and will be the origin of a wave at speed u
         % 3 the node is a intermediate node created by intersecting oblique arc and will be the origin of a wave at speed w
-        % TODO: THAT NEEDS TO BE DOUBLE CHECKED
 % Arc structure : Defined the arc main characteristics
     % Arc.Pamont : Coordinates of the upstream point of the arc
     % Arc.Paval : Coordinates of the downstream point of the arc
@@ -638,9 +641,6 @@ for i_initial = 1 : length(ListInitialNodeId)
     end
 end
 
-% [P,d] = shortestpath(G,254,281)
-
-
 % ---- for negative mean speeds of observers
 % --- nodes to investigate
 if CalculationMethod.BoundaryPaths
@@ -690,8 +690,6 @@ for i_link = 1 : NumLinks
     Tend = Link(i_link).ListGreenTime(find( Link(i_link).ListGreenTime<=CalculationMethod.TimeWindow,1,'last'));
     InitialNodeId = find( ([Node(:).RankX]==i_link) & ([Node(:).T]==Tini));  % first node at the most downstream signal, at end of a red phase, and after the "start" of all other signals
     FinalNodeId = find( ([Node(:).RankX]==i_link) & ([Node(:).T]==Tend)); % node at the first signal (most upstream). We can want it to be at end of red phase
-    %InitialNodeId = find( ([Node(:).RankX]==i_link) & ([Node(:).T]>=0) & ([Node(:).Type]==1),1,'first');  % first node at the most downstream signal, at end of a red phase, and after the "start" of all other signals
-    %FinalNodeId=find([Node(:).RankX]==i_link & [Node(:).T]>Node(InitialNodeId).T & [Node(:).Type]==1,1,'last'); % node at the first signal (most upstream). We can want it to be at end of red phase
     
     % --- find the shortest-paths
     shortestDists = distances(G, InitialNodeId,'Method','acyclic');
@@ -743,11 +741,9 @@ stdCuts = calcStandardErrorCuts(VRaS2);
 
 VRaS = sortrows(VRaS); % sort of the table from the smallest to highest overtaking flows, and from the smallest to the highest speed
 
-%%%%%
-% HERE I MAKE SURE THE MEAN STATIONARY CUT IS TAKEN.
-test = VRaS(VRaS(:,2)==0,1);
-VRaS(VRaS(:,2)==0,1)=mean(test);
-%%%%%
+% Make sure the stationary cut is taken for the nMC
+tmp = VRaS(VRaS(:,2)==0,1);
+VRaS(VRaS(:,2)==0,1)=mean(tmp);
 
 [~,list,~] = unique(VRaS(:,1),'first'); % id of overtaking flows with the smallest speed (tight cut)
 VRaS = VRaS(list,:); % we keep only different overtaking flows with the smallest speed (tight cut)
@@ -816,10 +812,6 @@ MacroFundDiag.RightCut(1:end-1) = ListLowerCuts; % id of lower cuts
 end
 
 function [ Int ] = intersection( a,b,c,d )
-% function to compute the interesection between two lines of equations:
-    % y = ax + b
-    % y = cx + d
-
 if a~=c
     % different speeds
     Int.k = (d-b) / (a-c);

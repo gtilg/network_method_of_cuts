@@ -49,9 +49,10 @@ end
         
         % Calculate general VT solution for all points in the numerical
         % grid
+        % Links:
         [Ncand] = linkCalc(hpStruct, kappa, dx, dt, j);
         
-        % Adapt this solution at nodes with inflow/outflow
+        % Nodes: Adapt this solution at nodes with inflow/outflow
         [Ncand] = nodeCalc(Ncand, dx, kappa, hpStruct, nodes, j);
         
         % Apply the minimum operation
@@ -93,6 +94,7 @@ end
         end
     end
 
+    % Free flow case
     function [Ncand] = nodeCalcff(Ncand, cid, cpos, ctr)
         % This function considers inflows and outflows for downstream
         % sections.
@@ -108,6 +110,7 @@ end
         Ncand(cid(4)).ff(cpos(4)+1) = floor((N_main_end(4) + N_out(1)) / numGrid.precision) * numGrid.precision;
     end
 
+    % Backward wave case
     function [Ncand] = nodeCalcbw(Ncand, hpStruct, cid, cpos, ctr, kappa, dx, j)
         
         g = sum(hpStruct(cid(1)).BNtemp(cpos(1),j-2:j));
