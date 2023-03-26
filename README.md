@@ -2,7 +2,7 @@
 
 ## Goal of this project
 
-This code enables the application of the network method of cuts as described in the paper: Tilg, Ambühl, Batista, Menenden, Leclercq, Busch. From Corridor to Network Macroscopic Fundamental Diagrams: A Semi-analytical Approximation Approach. It is implemented for the case study of the Sioux Falls network. The repo includes the data from a Cell Transmission Model ground truth.
+This code enables the application of the network method of cuts as described in the paper: "Tilg, Ambühl, Batista, Menendez, Leclercq, Busch. From Corridor to Network Macroscopic Fundamental Diagrams: A Semi-analytical Approximation Approach." It is implemented for the case study of the Sioux Falls network. The repo includes the data from a Cell Transmission Model ground truth.
 
 ## Technical aspects
 The code was developed in MATLAB and was tested with MATLAB 2023a.
