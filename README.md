@@ -4,8 +4,10 @@
 
 This code enables the application of the network method of cuts as described in the paper: "Tilg, Ambühl, Batista, Menendez, Leclercq, Busch. From Corridor to Network Macroscopic Fundamental Diagrams: A Semi-analytical Approximation Approach." It is implemented for the case study of the Sioux Falls network. The repo includes the data from a Cell Transmission Model ground truth as well as from the applied state-of-the-art methods.
 
-## Technical aspects
+## Running the code
 The code was developed and tested with MATLAB 2023a.
+
+To apply the method, the `src/main.m` file needs to be run. The input data needed is mainly the network. It needs to be specified as the `src/data/network_1.m` file. The fundamental diagram is specified in the `src/main.m`. The specification of the network variational theory can be found in `src/functions/hypernetwork/nvt.m`.
 
 ## References
 
